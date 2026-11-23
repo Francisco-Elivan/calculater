@@ -7,8 +7,8 @@ const { createClient } = require('@libsql/client');
 
 // Inicializa o cliente do Turso
 const db = createClient({
-    url: process.env.TURSO_DATABASE_URL || "libsql://basequestion-seven77.aws-sa-east-1.turso.io",
-    authToken: process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3OTQxNTg2MjcsImlkIjoiMDFhMWJjMmUtZTAwMS03NmRlLWJhZjEtZTZhYWQxNjJlYjNhIiwia2lkIjoiUUw4R1hzUXJMU2M5TS14aW5ETmQ5RWhfZVlKcHhfM3gzdnBnOUkzcnJ3OCIsInJpZCI6ImY0MTA1NGJiLTc5MDctNDQ0OC05M2I1LTgzYWM0NzA4YmZlYiJ9.4Yn1kZDJ0AstyRDJauV9AbLpoxLi8S0mlg7YOqIZJmAFxtco5e1aR2DUteX809eLsCeL_qIv6kKSj11xw-DVCw"
+    url: process.env.TURSO_DATABASE_URL ,
+    authToken: process.env.TURSO_AUTH_TOKEN
 });
 
 const app = express();
@@ -34,6 +34,14 @@ async function inicializarBanco() {
                 vibracoes INTEGER DEFAULT 1
             )
         `);
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS users (
+                id_user INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                pass TEXT
+              )
+        `);
+ 
         console.log("Tabela 'perguntas' verificada/criada no Turso.");
     } catch (err) {
         console.error("Erro ao inicializar banco:", err);
@@ -61,6 +69,32 @@ app.get('/api/perguntas', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+app.post('/api/login', async (req, res)=>{
+try {
+    const {name,pass} = req.body
+    const adm = await db.execute({sql:"SELECT * FROM users WHERE name =  ?",
+        args:[name.trim()]
+    })
+    
+    const adm_user =  adm.rows[0]?.name 
+    const adm_pass  = adm.rows[0]?.pass
+   
+    if(name.trim() === adm_user && pass.trim() === adm_pass){
+        
+        res.json({status:true,messagem:'login efetuado com sucesso'})
+        
+    }else{
+        res.json({status:false,messagem:'Não autorizado'})
+    } 
+
+     
+    
+} catch (error) {
+  console.log("erro catch login =>",error)  
+}
+})
+
 
 // Salva uma pergunta
 app.post('/api/perguntas', async (req, res) => {
@@ -212,7 +246,7 @@ io.on('connection', async (socket) => {
 });
 
 // Define a porta do servidor
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 server.listen(PORT, () => {
     console.log(`Servidor na porta ${PORT}`);

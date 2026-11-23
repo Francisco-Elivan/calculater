@@ -3,8 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Calculadora Vibração</title>
+  <!-- O segredo começa aqui: interactive-widget força o redimensionamento correto no mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+  <title>Área Restrita Acesso Root</title>
   <style>
     * {
       margin: 0;
@@ -16,13 +17,20 @@
       font-family: 'Segoe UI', system-ui, sans-serif;
       background: #0f0f23;
       color: #e0e0e0;
-      min-height: 100vh;
       padding: 20px;
+      /* Permite rolagem suave se o teclado subir */
+      overflow-y: auto; 
     }
 
     .container {
-      max-width: 900px;
+      /* Removemos o fundo laranja gritante e centralizamos o conteúdo */
+      min-height:calc(100dvh - 40px);
+      max-width: 500px; /* Evita que o formulário fique esticado demais em telas grandes */
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content:center;
+       
     }
 
     h1 {
@@ -43,20 +51,20 @@
       background: #1a1a2e;
       border-radius: 16px;
       padding: 24px;
-      margin-bottom: 20px;
       border: 1px solid #2a2a4e;
+      display: flex;
+      flex-direction: column;
+      gap: 24px; /* Cria um espaçamento consistente entre os inputs e o botão */
     }
 
+    .card-erro{
+      animation:pulse-border 3s infinite;
+    }
+  
     .form-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    @media (max-width: 600px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
+      grid-template-columns: 1fr; /* Um embaixo do outro fica melhor no mobile */
+      gap: 20px;
     }
 
     .form-group label {
@@ -67,8 +75,7 @@
       font-size: 0.9rem;
     }
 
-    .form-group input,
-    .form-group textarea {
+    .form-group input {
       width: 100%;
       padding: 12px 14px;
       border-radius: 10px;
@@ -78,15 +85,9 @@
       font-size: 1rem;
     }
 
-    .form-group input:focus,
-    .form-group textarea:focus {
+    .form-group input:focus {
       outline: none;
       border-color: #00d4ff;
-    }
-
-    .form-group textarea {
-      resize: vertical;
-      min-height: 60px;
     }
 
     .btn {
@@ -99,7 +100,10 @@
       transition: all 0.2s;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
+      width: 100%;
+   
     }
 
     .btn-primary {
@@ -108,213 +112,11 @@
     }
 
     .btn-primary:hover {
-      background: #33ddff;
-    }
-
-    .btn-danger {
-      background: #ff4757;
-      color: white;
-    }
-
-    .btn-success {
-      background: #2ed573;
-      color: #0f0f23;
-    }
-
-    .btn-warning {
-      background: #ffa502;
-      color: #0f0f23;
-    }
-
-    .btn-sm {
-      padding: 8px 14px;
-      font-size: 0.85rem;
-    }
-
-    .actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 20px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .stat-card {
-      background: #1a1a2e;
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      border: 1px solid #2a2a4e;
-    }
-
-    .stat-number {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #00d4ff;
-    }
-
-    .stat-label {
-      font-size: 0.85rem;
-      color: #888;
-      margin-top: 4px;
-    }
-
-    .pergunta-item {
-      background: #12122a;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
-      border-left: 4px solid #00d4ff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .pergunta-info {
-      flex: 1;
-    }
-
-    .pergunta-numero {
-      color: #00d4ff;
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    .pergunta-texto {
-      color: #ccc;
-      margin-top: 4px;
-      font-size: 0.95rem;
-    }
-
-    .pergunta-meta {
-      display: flex;
-      gap: 16px;
-      margin-top: 6px;
-      font-size: 0.85rem;
-      color: #888;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .badge-resposta {
-      background: #2ed57322;
-      color: #2ed573;
-      border: 1px solid #2ed57344;
-    }
-
-    .badge-vibra {
-      background: #ffa50222;
-      color: #ffa502;
-      border: 1px solid #ffa50244;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: #666;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: #2ed573;
-      color: #0f0f23;
-      padding: 14px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      transform: translateY(100px);
-      transition: transform 0.3s;
-      z-index: 1000;
-    }
-
-    .toast.show {
-      transform: translateY(0);
-    }
-
-    .toast.error {
-      background: #ff4757;
-      color: white;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      padding: 20px;
-    }
-
-    .modal-overlay.active {
-      display: flex;
-    }
-
-    .modal {
-      background: #1a1a2e;
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 500px;
-      width: 100%;
-      border: 1px solid #2a2a4e;
-    }
-
-    .modal h3 {
-      color: #00d4ff;
-      margin-bottom: 16px;
-    }
-
-    .import-area {
-      width: 100%;
-      min-height: 120px;
-      padding: 12px;
-      border-radius: 10px;
-      border: 2px dashed #333;
-      background: #0f0f23;
-      color: #e0e0e0;
-      font-family: monospace;
-      font-size: 0.9rem;
-      resize: vertical;
-    }
-
-    .qr-section {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    .qr-code {
-      background: white;
-      padding: 16px;
-      border-radius: 12px;
-      display: inline-block;
-      margin-top: 12px;
-    }
-
-    .qr-url {
-      margin-top: 8px;
-      font-size: 0.85rem;
-      color: #888;
-      word-break: break-all;
+      background: #1ec9eb;
     }
 
     .online-users {
-      position: fixed;
+      position: absolute; /* Mudado de fixed para absolute para não atrapalhar no mobile */
       top: 20px;
       right: 20px;
       background: #1a1a2e;
@@ -325,6 +127,7 @@
       align-items: center;
       gap: 8px;
       font-size: 0.9rem;
+      z-index: 10;
     }
 
     .online-dot {
@@ -336,15 +139,17 @@
     }
 
     @keyframes pulse {
+      0%, 100% { opacity: 1 }
+      50% { opacity: 0.4 }
+    }
 
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: 0.4
-      }
+     .alerta-caps {
+      display: none; /* Oculto por padrão */
+      color: #d9534f;
+      font-family: sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      margin-top: 5px;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
@@ -353,412 +158,133 @@
 
 <body>
   <div class="online-users">
-    <div class="online-dot"></div><span id="onlineCount">Admin online</span>
+    <div class="online-dot"></div><span id="onlineCount">On</span>
   </div>
+
   <div class="container">
-    <h1>Painel Administrativo</h1>
-    <p class="subtitle">Cadastre as perguntas. O time digita o numero e aperta +, -, x ou / para enviar o sinal.</p>
-
-    <div class="stats">
-      <div class="stat-card">
-        <div class="stat-number" id="statTotal">0</div>
-        <div class="stat-label">Perguntas cadastradas</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="statOnline">0</div>
-        <div class="stat-label">Usuarios online</div>
-      </div>
-    </div>
+    <h1>Acesso Restrito</h1>
+    <p class="subtitle">Somente o Administrador</p>
 
     <div class="card">
-      <h3 style="color: #00d4ff; margin-bottom: 16px;">Nova Pergunta</h3>
+      
       <div class="form-grid">
         <div class="form-group">
-          <label>Numero da Pergunta</label>
-          <input type="number" id="numero" placeholder="Ex: 1" min="1">
+          <label for="Usuario">Usuário</label>
+          <!-- type="text" padrão -->
+          <input type="text" id="Usuario" placeholder="Digite o usuário" required autocomplete="off" />
         </div>
         <div class="form-group">
-          <label>Numero de Vibracoes</label>
-          <input type="number" id="vibracoes" placeholder="Ex: 3" min="1" max="20" value="1">
+          <label for="Senha">Senha</label>
+          <!-- Mudado para type="password" por segurança -->
+          <input type="password" id="Senha" placeholder="Digite a senha" required />
+        
         </div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <label>Texto da Pergunta</label>
-          <textarea id="pergunta" placeholder="Digite a pergunta completa..."></textarea>
-        </div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <label>Resposta Correta</label>
-          <input type="text" id="resposta" placeholder="Ex: A, B, C, D ou o texto da resposta">
-        </div>
+        <div id="avisoCaps" class="alerta-caps">⚠️ Caps Lock ativado!</div>
       </div>
       <div class="actions">
-        <button class="btn btn-primary" onclick="adicionarPergunta()">Salvar Pergunta</button>
-        <button class="btn btn-success" onclick="abrirImportacao()">Importar Lista</button>
-        <button class="btn btn-warning" onclick="abrirEdicao()">Editar</button>
-        <button class="btn btn-danger" onclick="limparTudo()">Limpar Tudo</button>
-      </div>
-    </div>
-    <!-- card palavra chave -->
-    <!-- <div class="card">
-
-      <h3 style="color:#00d4ff;margin-bottom:16px;">
-        Palavras-chave
-      </h3>
-
-      <div class="form-grid">
-
-        <div class="form-group">
-          <label>Número da Pergunta</label>
-
-          <input type="number" id="numeroPalavra" placeholder="Ex: 44">
-        </div>
-
-        <div class="form-group">
-          <label>Palavra-chave</label>
-
-          <input type="text" id="novaPalavra" placeholder="Ex: pergunta 44">
-        </div>
-
-      </div>
-
-      <div class="actions">
-
-        <button class="btn btn-success" onclick="adicionarPalavra()">
-
-          + Adicionar Palavra
-
-        </button>
-
-      </div>
-
-      <div id="listaPalavras" style="margin-top:20px;">
-
-      </div>
-
-    </div> -->
-
-    <div class="card">
-      <h3 style="color: #00d4ff; margin-bottom: 16px;">Lista de Perguntas</h3>
-      <div id="listaPerguntas">
-        <div class="empty-state">
-          <div style="font-size:4rem;margin-bottom:16px;">📝</div>
-          <p>Nenhuma pergunta cadastrada ainda.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card qr-section">
-      <h3 style="color: #00d4ff; margin-bottom: 8px;">Link para o Time</h3>
-      <p style="color: #888; margin-bottom: 12px;">Compartilhe este QR Code com seu time:</p>
-      <div class="qr-code"><canvas id="qrCanvas"></canvas></div>
-      <p class="qr-url" id="qrUrl"></p>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modalImport">
-    <div class="modal">
-      <h3>Importar Perguntas em Lote</h3>
-      <p style="color: #888; margin-bottom: 12px; font-size: 0.9rem;">
-        Formato: <code
-          style="background: #0f0f23; padding: 2px 6px; border-radius: 4px;">numero|pergunta|resposta|vibracoes</code><br>
-        Uma por linha. Ex: <code
-          style="background: #0f0f23; padding: 2px 6px; border-radius: 4px;">1|Qual a capital do Brasil?|Brasilia|2</code>
-      </p>
-      <textarea class="import-area" id="importText" placeholder="1|Qual a capital do Brasil?|Brasilia|2
-2|Quanto e 2+2?|4|3
-3|Quem descobriu o Brasil?|Pedro Alvares Cabral|1"></textarea>
-      <div class="actions" style="margin-top: 16px;">
-        <button class="btn btn-primary" onclick="importarPerguntas()">Importar</button>
-        <button class="btn btn-danger btn-sm" onclick="fecharModal('modalImport')">Cancelar</button>
+        <button class="btn btn-primary" onclick="enter()">Acessar Painel</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="modalEdit">
-    <div class="modal">
-      <h3>Editar Pergunta</h3>
-      <input type="hidden" id="editId">
-      <div class="form-grid" style="margin-top: 16px;">
-        <div class="form-group"><label>Numero</label><input type="number" id="editNumero" min="1"></div>
-        <div class="form-group"><label>Vibracoes</label><input type="number" id="editVibracoes" min="1" max="20"></div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>Pergunta</label><textarea
-            id="editPergunta"></textarea></div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>Resposta</label><input type="text"
-            id="editResposta"></div>
-      </div>
-      <div class="actions" style="margin-top: 16px;">
-        <button class="btn btn-primary" onclick="salvarEdicao()">Salvar</button>
-        <button class="btn btn-danger btn-sm" onclick="fecharModal('modalEdit')">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script>
-    const API_URL = '';
-    let perguntas = [];
-    // let palavras = [];
-    let socket;
-
-
-    // async function carregarPalavras() {
-
-    //   const res =
-    //     await fetch("/api/palavras");
-
-    //   palavras =
-    //     await res.json();
-
-    //   renderizarPalavras();
-
-    // }
-
-    // async function adicionarPalavra() {
-
-    //   const numero =
-    //     parseInt(
-    //       document.getElementById("numeroPalavra").value
-    //     );
-
-    //   const palavra =
-    //     document.getElementById("novaPalavra")
-    //       .value
-    //       .trim();
-
-    //   if (!numero || !palavra) {
-
-    //     mostrarToast("Preencha os campos.", true);
-
-    //     return;
-
-    //   }
-
-    //   await fetch(
-
-    //     "/api/palavras",
-
-    //     {
-
-    //       method: "POST",
-
-    //       headers: {
-    //         "Content-Type": "application/json"
-    //       },
-
-    //       body: JSON.stringify({
-
-    //         numero,
-
-    //         palavra
-
-    //       })
-
-    //     }
-
-    //   );
-
-    //   document.getElementById("numeroPalavra").value = "";
-
-    //   document.getElementById("novaPalavra").value = "";
-
-    //   carregarPalavras();
-
-    // }
-
-    // async function excluirPalavra(id) {
-
-    //   await fetch(
-
-    //     "/api/palavras/" + id,
-
-    //     {
-
-    //       method: "DELETE"
-
-    //     }
-
-    //   );
-
-    //   carregarPalavras();
-
-    // }
-
-    // function renderizarPalavras() {
-
-    //   const div =
-    //     document.getElementById("listaPalavras");
-
-    //   if (palavras.length == 0) {
-
-    //     div.innerHTML = "<p>Nenhuma palavra cadastrada.</p>";
-
-    //     return;
-
-    //   }
-
-    //   div.innerHTML =
-
-    //     palavras.map(p => `
-
-    //     <div class="pergunta-item">
-
-    //         <div class="pergunta-info">
-
-    //             <div class="pergunta-numero">
-
-    //                 Pergunta ${p.numero}
-
-    //             </div>
-
-    //             <div class="pergunta-texto">
-
-    //                 ${p.palavra}
-
-    //             </div>
-
-    //         </div>
-
-    //         <button
-
-    //             class="btn btn-danger btn-sm"
-
-    //             onclick="excluirPalavra(${p.id})">
-
-    //             Excluir
-
-    //         </button>
-
-    //     </div>
-
-    // `).join("");
-
-    // }
-
-
-
-    function conectarSocket() {
-      socket = io();
-      socket.on('connect', () => { console.log('Conectado'); });
-      socket.on('perguntas-atualizadas', (novas) => { perguntas = novas; renderizarPerguntas(); atualizarStats(); });
-    }
-
-    async function carregarPerguntas() {
-      try { const res = await fetch('/api/perguntas'); perguntas = await res.json(); renderizarPerguntas(); atualizarStats(); } catch (e) { }
-    }
-
-    async function adicionarPergunta() {
-      const numero = parseInt(document.getElementById('numero').value);
-      const pergunta = document.getElementById('pergunta').value.trim();
-      const resposta = document.getElementById('resposta').value.trim();
-      const vibracoes = parseInt(document.getElementById('vibracoes').value) || 1;
-      if (!resposta) { mostrarToast('Preencha todos os campos!', true); return; }
-      const existente = perguntas.find(p => p.numero === numero);
-      if (existente) { mostrarToast(`Pergunta ${numero} ja existe!`, true); return; }
-      try {
-        const res = await fetch('/api/perguntas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ numero, pergunta, resposta, vibracoes }) });
-        const nova = await res.json(); perguntas.push(nova);
-        socket.emit('perguntas-atualizadas', perguntas);
-        limparFormulario(); renderizarPerguntas(); atualizarStats();
-        mostrarToast(`Pergunta ${nova.numero} adicionada!`);
-      } catch (e) { mostrarToast('Erro ao salvar!', true); }
-    }
-
-    function abrirImportacao() { document.getElementById('modalImport').classList.add('active'); }
-    async function importarPerguntas() {
-      const texto = document.getElementById('importText').value.trim();
-      if (!texto) return;
-      const linhas = texto.split('\n').filter(l => l.trim());
-      let adicionadas = 0;
-      for (const linha of linhas) {
-        const partes = linha.split('|').map(p => p.trim());
-        if (partes.length >= 3) {
-          const [numero, pergunta, resposta, vibracoes] = partes;
-          try {
-            const res = await fetch('/api/perguntas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ numero: parseInt(numero) || (perguntas.length + 1), pergunta, resposta, vibracoes: parseInt(vibracoes) || 1 }) });
-            const nova = await res.json(); perguntas.push(nova); adicionadas++;
-          } catch (e) { }
-        }
+  <script type="text/javascript">
+    const inputUsuario = document.getElementById('Usuario')
+    const inputSenha = document.getElementById('Senha');
+    const avisoCaps = document.getElementById('avisoCaps');
+
+    function verificarCapsLock(event) {
+      // Verifica se o método existe e retorna true/false para CapsLock
+      if (event.getModifierState && event.getModifierState('CapsLock')) {
+        avisoCaps.style.display = 'block';
+      } else {
+        avisoCaps.style.display = 'none';
       }
-      socket.emit('perguntas-atualizadas', perguntas);
-      fecharModal('modalImport'); document.getElementById('importText').value = '';
-      renderizarPerguntas(); atualizarStats(); mostrarToast(`${adicionadas} perguntas importadas!`);
     }
 
-    function abrirEdicao() {
-      if (perguntas.length === 0) { mostrarToast('Nenhuma pergunta para editar!', true); return; }
-      abrirEditarPergunta(perguntas[0].id);
-    }
-    function abrirEditarPergunta(id) {
-      const p = perguntas.find(x => x.id === id);
-      if (!p) return;
-      document.getElementById('editId').value = p.id;
-      document.getElementById('editNumero').value = p.numero;
-      document.getElementById('editPergunta').value = p.pergunta;
-      document.getElementById('editResposta').value = p.resposta;
-      document.getElementById('editVibracoes').value = p.vibracoes;
-      document.getElementById('modalEdit').classList.add('active');
-    }
-    async function salvarEdicao() {
-      const id = parseInt(document.getElementById('editId').value);
-      const dados = { numero: parseInt(document.getElementById('editNumero').value), pergunta: document.getElementById('editPergunta').value.trim(), resposta: document.getElementById('editResposta').value.trim(), vibracoes: parseInt(document.getElementById('editVibracoes').value) || 1 };
-      try {
-        const res = await fetch(`/api/perguntas/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
-        const atualizada = await res.json(); const idx = perguntas.findIndex(p => p.id === id);
-        if (idx !== -1) perguntas[idx] = atualizada;
-        socket.emit('perguntas-atualizadas', perguntas); fecharModal('modalEdit');
-        renderizarPerguntas(); mostrarToast('Pergunta atualizada!');
-      } catch (e) { mostrarToast('Erro ao atualizar!', true); }
-    }
-    async function deletarPergunta(id) {
-      if (!confirm('Tem certeza?')) return;
-      try {
-        await fetch(`/api/perguntas/${id}`, { method: 'DELETE' }); perguntas = perguntas.filter(p => p.id !== id);
-        socket.emit('perguntas-atualizadas', perguntas); renderizarPerguntas(); atualizarStats(); mostrarToast('Removida!');
-      } catch (e) { mostrarToast('Erro!', true); }
-    }
-    async function limparTudo() {
-      if (!confirm('Apagar TODAS as perguntas?')) return;
-      if (!confirm('Isso nao pode ser desfeito. Confirmar?')) return;
-      try {
-        await fetch('/api/perguntas', { method: 'DELETE' }); perguntas = [];
-        socket.emit('perguntas-atualizadas', perguntas); renderizarPerguntas(); atualizarStats(); mostrarToast('Tudo limpo!');
-      } catch (e) { mostrarToast('Erro!', true); }
-    }
+    // Monitora ao pressionar/soltar teclas e ao clicar no campo
+    inputSenha.addEventListener('keyup', verificarCapsLock);
+    inputSenha.addEventListener('keydown', verificarCapsLock);
+    inputSenha.addEventListener('click', verificarCapsLock);
 
-    function renderizarPerguntas() {
-      const container = document.getElementById('listaPerguntas');
-      if (perguntas.length === 0) { container.innerHTML = '<div class="empty-state"><div style="font-size:4rem;margin-bottom:16px;">📝</div><p>Nenhuma pergunta cadastrada ainda.</p></div>'; return; }
-      container.innerHTML = perguntas.sort((a, b) => a.numero - b.numero).map(p => `
-        <div class="pergunta-item">
-          <div class="pergunta-info">
-            <div class="pergunta-numero">#${p.numero}</div>
-            <div class="pergunta-texto">${p.pergunta}</div>
-            <div class="pergunta-meta">
-              <span class="badge badge-resposta">Resposta: ${p.resposta}</span>
-              <span class="badge badge-vibra">${p.vibracoes} vibracao(oes)</span>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-primary btn-sm" onclick='abrirEditarPergunta(${p.id})'>Editar</button>
-            <button class="btn btn-danger btn-sm" onclick='deletarPergunta(${p.id})'>Excluir</button>
-          </div>
-        </div>
-      `).join('');
-    }
-    function atualizarStats() { document.getElementById('statTotal').textContent = perguntas.length; }
-    function gerarQR() {
-      const url = window.location.origin + '/calculadora.html';
-      document.getElementById('qrUrl').textContent = url;
-      new QRious({ element: document.getElementById('qrCanvas'), value: url, size: 200, background: 'white', foreground: 'black', level: 'H' });
-    }
-    function limparFormulario() { document.getElementById('numero').value = ''; document.getElementById('pergunta').value = ''; document.getElementById('resposta').value = ''; document.getElementById('vibracoes').value = '1'; }
-    function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
-    function mostrarToast(msg, erro = false) { const toast = document.getElementById('toast'); toast.textContent = msg; toast.className = 'toast' + (erro ? ' error' : '') + ' show'; setTimeout(() => toast.classList.remove('show'), 3000); }
+    inputUsuario.addEventListener('keyup',verificarCapsLock);
+    inputUsuario.addEventListener('keydown',verificarCapsLock);
+    inputUsuario.addEventListener('click',verificarCapsLock);
 
-    document.addEventListener('DOMContentLoaded', () => {
-      conectarSocket(); carregarPerguntas(); gerarQR(); carregarPalavras();
-      document.querySelectorAll('.modal-overlay').forEach(m => { m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('active'); }); });
+
+    // Esconde o aviso quando o usuário sai do campo
+
+    inputUsuario.addEventListener('blur', () => {
+      avisoCaps.style.display = 'none';
     });
+
+    inputSenha.addEventListener('blur', () => {
+      avisoCaps.style.display = 'none';
+    });
+
+
+  async  function enter() {
+     toast()
+      // .trim() impede que o usuário envie apenas espaços em branco
+      const name = document.getElementById('Usuario').value.trim();
+      const pass = document.getElementById('Senha').value.trim();
+      if (name === ''){
+         alert('preencha o campo Usuario')
+         document.getElementById('Usuario').focus()
+         
+         return;
+      }else if(pass === ''){
+         alert('preencha o campo Senha')
+         document.getElementById('Senha').focus()
+         return;
+      }
+         
+     try {
+        
+         
+      const response = await  fetch("http://localhost:3000/api/login",{
+         method:"POST",
+         headers:{
+        "Content-Type":"application/json"
+         },
+         body:JSON.stringify({name,pass})
+      })
+      const data = await response.json()
+      console.log(data)
+     if(!data.status){
+      alert(data.messagem)
+      return;
+     }else{
+         document.getElementById('Usuario').value = ''
+         document.getElementById('Senha').value = ''
+         window.location.href = '/admin.html'
+        
+     }
+    
+       } catch (error) {
+        alert(error)  
+       }  
+      
+     
+    }
+  
+
+    // Código bônus: Rola a tela até o botão se o teclado abrir em telas muito pequenas
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+      input.addEventListener('focus', () => {
+      setTimeout(() => {
+          document.querySelector('.btn').scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 300);
+      });
+    });
+
+ async  function toast(){
+   const toast = document.querySelector('.card')
+      toast.classList.add(`card-erro`)
+     await setTimeout(()=>{
+   //   toast.classList.remove('card-erro')
+      },500)
+   }
   </script>
 </body>
 
