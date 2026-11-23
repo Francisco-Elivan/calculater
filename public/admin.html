@@ -459,144 +459,8 @@
   <script>
     const API_URL = '';
     let perguntas = [];
-    // let palavras = [];
+ 
     let socket;
-
-
-    // async function carregarPalavras() {
-
-    //   const res =
-    //     await fetch("/api/palavras");
-
-    //   palavras =
-    //     await res.json();
-
-    //   renderizarPalavras();
-
-    // }
-
-    // async function adicionarPalavra() {
-
-    //   const numero =
-    //     parseInt(
-    //       document.getElementById("numeroPalavra").value
-    //     );
-
-    //   const palavra =
-    //     document.getElementById("novaPalavra")
-    //       .value
-    //       .trim();
-
-    //   if (!numero || !palavra) {
-
-    //     mostrarToast("Preencha os campos.", true);
-
-    //     return;
-
-    //   }
-
-    //   await fetch(
-
-    //     "/api/palavras",
-
-    //     {
-
-    //       method: "POST",
-
-    //       headers: {
-    //         "Content-Type": "application/json"
-    //       },
-
-    //       body: JSON.stringify({
-
-    //         numero,
-
-    //         palavra
-
-    //       })
-
-    //     }
-
-    //   );
-
-    //   document.getElementById("numeroPalavra").value = "";
-
-    //   document.getElementById("novaPalavra").value = "";
-
-    //   carregarPalavras();
-
-    // }
-
-    // async function excluirPalavra(id) {
-
-    //   await fetch(
-
-    //     "/api/palavras/" + id,
-
-    //     {
-
-    //       method: "DELETE"
-
-    //     }
-
-    //   );
-
-    //   carregarPalavras();
-
-    // }
-
-    // function renderizarPalavras() {
-
-    //   const div =
-    //     document.getElementById("listaPalavras");
-
-    //   if (palavras.length == 0) {
-
-    //     div.innerHTML = "<p>Nenhuma palavra cadastrada.</p>";
-
-    //     return;
-
-    //   }
-
-    //   div.innerHTML =
-
-    //     palavras.map(p => `
-
-    //     <div class="pergunta-item">
-
-    //         <div class="pergunta-info">
-
-    //             <div class="pergunta-numero">
-
-    //                 Pergunta ${p.numero}
-
-    //             </div>
-
-    //             <div class="pergunta-texto">
-
-    //                 ${p.palavra}
-
-    //             </div>
-
-    //         </div>
-
-    //         <button
-
-    //             class="btn btn-danger btn-sm"
-
-    //             onclick="excluirPalavra(${p.id})">
-
-    //             Excluir
-
-    //         </button>
-
-    //     </div>
-
-    // `).join("");
-
-    // }
-
-
 
     function conectarSocket() {
       socket = io();
@@ -718,7 +582,7 @@
     function mostrarToast(msg, erro = false) { const toast = document.getElementById('toast'); toast.textContent = msg; toast.className = 'toast' + (erro ? ' error' : '') + ' show'; setTimeout(() => toast.classList.remove('show'), 3000); }
 
     document.addEventListener('DOMContentLoaded', () => {
-      conectarSocket(); carregarPerguntas(); gerarQR(); carregarPalavras();
+      conectarSocket(); carregarPerguntas(); gerarQR();
       document.querySelectorAll('.modal-overlay').forEach(m => { m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('active'); }); });
     });
   </script>

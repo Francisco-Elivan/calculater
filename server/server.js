@@ -1,478 +1,279 @@
-// Importa o framework Express
+require('dotenv').config();
+const cors = require('cors')
 const express = require('express');
-
-// Importa o módulo HTTP do Node.js
 const http = require('http');
-
-// Importa o Socket.IO para comunicação em tempo real
 const { Server } = require('socket.io');
-
-// Importa módulo para trabalhar com caminhos de arquivos
 const path = require('path');
+const { createClient } = require('@libsql/client');
 
-// Importa o SQLite3
-const sqlite3 = require('sqlite3').verbose();
+// Inicializa o cliente do Turso
+const db = createClient({
+    url: process.env.TURSO_DATABASE_URL ,
+    authToken: process.env.TURSO_AUTH_TOKEN
+});
 
-
-// Cria a aplicação Express
 const app = express();
 
-// Cria o servidor HTTP usando o Express
+const corsOptions = {
+  origin: 'https://calculadora.securitfy.com.br', // Permitir todas as origens (ou substitua pelo domínio específico)
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitido
+  
+};
+
+app.use(cors(corsOptions))
+
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.removeHeader('X-Powered-By');
+  res.header('Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type,Authorization, Accept,X-PINGOTHER');
+  res.header('Access-Control-Allow-Methods', 'GET, PUT,POST, DELETE');
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('Cache-Control', 'no-cache');
+  next();
+});
+
 const server = http.createServer(app);
 
-// Inicializa o Socket.IO permitindo qualquer origem
 const io = new Server(server, {
     cors: {
         origin: "*"
     }
 });
 
+// ==========================================
+// INICIALIZAÇÃO DA TABELA NO TURSO
+// ==========================================
+async function inicializarBanco() {
+    try {
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS perguntas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                numero INTEGER,
+                pergunta TEXT,
+                resposta TEXT,
+                vibracoes INTEGER DEFAULT 1
+            )
+        `);
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS users (
+                id_user INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                pass TEXT
+              )
+        `);
+ 
+        console.log("Tabela 'perguntas' verificada/criada no Turso.");
+    } catch (err) {
+        console.error("Erro ao inicializar banco:", err);
+    }
+}
+
+inicializarBanco();
 
 // ==========================================
-// BANCO SQLITE
+// MIDDLEWARES
 // ==========================================
-
-// Abre (ou cria) o banco chamado banco.db
-const db = new sqlite3.Database('./banco.db');
-
-
-// Compartilha a pasta public
 app.use(express.static(path.join(__dirname, '../public')));
+// Capturar todas as rotas e redirecionar para o index.html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public', 'index.html'));
+}); 
 
-// Permite receber JSON nas requisições
 app.use(express.json());
 
-
+// ==========================================
+// ROTAS DA API
+// ==========================================
 
 // Lista todas as perguntas
-app.get('/api/perguntas', (req, res) => {
-
-    db.all(
-
-        "SELECT * FROM perguntas ORDER BY numero",
-
-        [],
-
-        (err, rows) => {
-
-            if (err) {
-
-                return res.status(500).json(err);
-
-            }
-
-            res.json(rows);
-
-        }
-
-    );
-
+app.get('/api/perguntas', async (req, res) => {
+    try {
+        const result = await db.execute("SELECT * FROM perguntas ORDER BY numero");
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
+app.post('/api/login', async (req, res)=>{
+try {
+    const {name,pass} = req.body
+    const adm = await db.execute({sql:"SELECT * FROM users WHERE name =  ?",
+        args:[name.trim()]
+    })
+    
+    const adm_user =  adm.rows[0]?.name 
+    const adm_pass  = adm.rows[0]?.pass
+   
+    if(name.trim() === adm_user && pass.trim() === adm_pass){
+        
+        res.json({status:true,messagem:'login efetuado com sucesso'})
+        
+    }else{
+        res.json({status:false,messagem:'Não autorizado'})
+    } 
 
+     
+    
+} catch (error) {
+  console.log("erro catch login =>",error)  
+}
+})
 
 
 // Salva uma pergunta
-app.post('/api/perguntas', (req, res) => {
-
-    // Recebe os dados enviados
+app.post('/api/perguntas', async (req, res) => {
     const { numero, pergunta, resposta, vibracoes } = req.body;
+    const vib = vibracoes || 1;
 
-    // Executa INSERT
-    db.run(
+    try {
+        const result = await db.execute({
+            sql: `INSERT INTO perguntas (numero, pergunta, resposta, vibracoes) VALUES (?, ?, ?, ?)`,
+            args: [numero, pergunta, resposta, vib]
+        });
 
-        `INSERT INTO perguntas
-        (numero, pergunta, resposta, vibracoes)
-        VALUES (?, ?, ?, ?)`,
-
-        [
-
+        res.json({
+            id: Number(result.lastInsertRowid),
             numero,
-
             pergunta,
-
             resposta,
-
-            vibracoes || 1
-
-        ],
-
-        function (err) {
-
-            if (err) {
-
-                return res.status(500).json(err);
-
-            }
-
-            // Retorna o registro salvo
-            res.json({
-
-                id: this.lastID,
-
-                numero,
-
-                pergunta,
-
-                resposta,
-
-                vibracoes: vibracoes || 1
-
-            });
-
-        }
-
-    );
-
+            vibracoes: vib
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
-
-
-
 
 // Atualiza uma pergunta
-app.put('/api/perguntas/:id', (req, res) => {
-
+app.put('/api/perguntas/:id', async (req, res) => {
     const id = parseInt(req.params.id);
+    const { numero, pergunta, resposta, vibracoes } = req.body;
 
-    const {
+    try {
+        const result = await db.execute({
+            sql: `
+                UPDATE perguntas
+                SET numero = ?, pergunta = ?, resposta = ?, vibracoes = ?
+                WHERE id = ?
+            `,
+            args: [numero, pergunta, resposta, vibracoes, id]
+        });
 
-        numero,
-
-        pergunta,
-
-        resposta,
-
-        vibracoes
-
-    } = req.body;
-
-    db.run(
-
-        `
-        UPDATE perguntas
-        SET
-            numero=?,
-            pergunta=?,
-            resposta=?,
-            vibracoes=?
-        WHERE id=?
-        `,
-
-        [
-
-            numero,
-
-            pergunta,
-
-            resposta,
-
-            vibracoes,
-
-            id
-
-        ],
-
-        function (err) {
-
-            if (err) {
-
-                return res.status(500).json(err);
-
-            }
-
-            if (this.changes == 0) {
-
-                return res.status(404).json({
-
-                    error: "Nao encontrada"
-
-                });
-
-            }
-
-            res.json({
-
-                id,
-
-                numero,
-
-                pergunta,
-
-                resposta,
-
-                vibracoes
-
-            });
-
+        if (result.rowsAffected === 0) {
+            return res.status(404).json({ error: "Nao encontrada" });
         }
 
-    );
-
+        res.json({
+            id,
+            numero,
+            pergunta,
+            resposta,
+            vibracoes
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
-
-
-
 
 // Remove uma pergunta
-app.delete('/api/perguntas/:id', (req, res) => {
-
+app.delete('/api/perguntas/:id', async (req, res) => {
     const id = parseInt(req.params.id);
 
-    db.run(
-
-        "DELETE FROM perguntas WHERE id=?",
-
-        [id],
-
-        function (err) {
-
-            if (err) {
-
-                return res.status(500).json(err);
-
-            }
-
-            res.json({
-
-                success: true
-
-            });
-
-        }
-
-    );
-
+    try {
+        await db.execute({
+            sql: "DELETE FROM perguntas WHERE id = ?",
+            args: [id]
+        });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
-
-
-
 
 // Remove todas as perguntas
-app.delete('/api/perguntas', (req, res) => {
-
-    db.run(
-
-        "DELETE FROM perguntas",
-
-        [],
-
-        function (err) {
-
-            if (err) {
-
-                return res.status(500).json(err);
-
-            }
-
-            res.json({
-
-                success: true
-
-            });
-
-        }
-
-    );
-
+app.delete('/api/perguntas', async (req, res) => {
+    try {
+        await db.execute("DELETE FROM perguntas");
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
-
-
 
 // ==========================================
 // SOCKET.IO
 // ==========================================
-
-io.on('connection', (socket) => {
-
-    // Mostra no console quem conectou
+io.on('connection', async (socket) => {
     console.log("Conectado:", socket.id);
 
-    // Carrega todas as perguntas do banco
-    db.all(
-
-        "SELECT * FROM perguntas ORDER BY numero",
-
-        [],
-
-        (err, rows) => {
-
-            socket.emit(
-
-                "perguntas-atualizadas",
-
-                rows
-
-            );
-
-        }
-
-    );
-
+    // Carrega todas as perguntas do banco ao conectar
+    try {
+        const result = await db.execute("SELECT * FROM perguntas ORDER BY numero");
+        socket.emit("perguntas-atualizadas", result.rows);
+    } catch (err) {
+        console.error("Erro ao carregar perguntas no connect:", err);
+    }
 
     // Quando um cliente consulta uma pergunta
-    socket.on('consultar-pergunta', (data) => {
+    socket.on('consultar-pergunta', async (data) => {
+        const { numeroPergunta, operador } = data;
 
-        // Recebe número da pergunta e operador
-        const {
+        try {
+            const result = await db.execute({
+                sql: "SELECT * FROM perguntas WHERE numero = ?",
+                args: [parseInt(numeroPergunta)]
+            });
 
-            numeroPergunta,
+            const pergunta = result.rows[0];
 
-            operador
+            if (pergunta) {
+                socket.emit('resposta-consulta', {
+                    sucesso: true,
+                    vibracoes: pergunta.vibracoes,
+                    numero: pergunta.numero,
+                    operador
+                });
 
-        } = data;
-        // Procura a pergunta no banco
-        db.get(
-
-            "SELECT * FROM perguntas WHERE numero=?",
-
-            [
-
-                parseInt(numeroPergunta)
-
-            ],
-
-            (err, pergunta) => {
-
-                if (pergunta) {
-
-                    // Retorna somente vibrações
-                    socket.emit(
-
-                        'resposta-consulta',
-
-                        {
-
-                            sucesso: true,
-
-                            vibracoes: pergunta.vibracoes,
-
-                            numero: pergunta.numero,
-
-                            operador
-
-                        }
-
-                    );
-
-                    // Faz vibrar todos os outros clientes exeto quem enviou 
-                    // socket.broadcast.emit(
-
-                    //     'vibrar',
-
-                    //     {
-
-                    //         vibracoes: pergunta.vibracoes,
-
-                    //         numero: pergunta.numero,
-
-                    //         de: socket.id
-
-                    //     }
-
-                    // );
-                    io.emit(
-
-                        'vibrar',
-
-                        {
-
-                            vibracoes: pergunta.vibracoes,
-
-                            numero: pergunta.numero,
-
-                            de: socket.id
-
-                        }
-
-                    );
-
-                }
-
-                else {
-
-                    socket.emit(
-
-                        'resposta-consulta',
-
-                        {
-
-                            sucesso: false,
-
-                            mensagem: 'Pergunta nao encontrada'
-
-                        }
-
-                    );
-
-                }
-
+                io.emit('vibrar', {
+                    vibracoes: pergunta.vibracoes,
+                    numero: pergunta.numero,
+                    de: socket.id
+                });
+            } else {
+                socket.emit('resposta-consulta', {
+                    sucesso: false,
+                    mensagem: 'Pergunta nao encontrada'
+                });
             }
-
-        );
-
+        } catch (err) {
+            console.error("Erro ao consultar pergunta:", err);
+            socket.emit('resposta-consulta', {
+                sucesso: false,
+                mensagem: 'Erro interno no servidor'
+            });
+        }
     });
-
 
     // Atualiza todas as perguntas
-    socket.on('perguntas-atualizadas', () => {
-
-        db.all(
-
-            "SELECT * FROM perguntas ORDER BY numero",
-
-            [],
-
-            (err, rows) => {
-
-                socket.broadcast.emit(
-
-                    "perguntas-atualizadas",
-
-                    rows
-
-                );
-
-            }
-
-        );
-
+    socket.on('perguntas-atualizadas', async () => {
+        try {
+            const result = await db.execute("SELECT * FROM perguntas ORDER BY numero");
+            socket.broadcast.emit("perguntas-atualizadas", result.rows);
+        } catch (err) {
+            console.error("Erro ao atualizar perguntas via socket:", err);
+        }
     });
 
-
     // Quando um cliente desconecta
-    socket.on(
-
-        'disconnect',
-
-        () => {
-
-            console.log(
-
-                "Desconectado:",
-
-                socket.id
-
-            );
-
-        }
-
-    );
-
+    socket.on('disconnect', () => {
+        console.log("Desconectado:", socket.id);
+    });
 });
 
-
-
 // Define a porta do servidor
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
-
-// Inicia o servidor
 server.listen(PORT, () => {
-
-    console.log(
-
-        `Servidor na porta ${PORT}`
-
-    );
-
+    console.log(`Servidor na porta ${PORT}`);
 });

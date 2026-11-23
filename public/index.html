@@ -241,7 +241,7 @@
      try {
         
          
-      const response = await  fetch("http://localhost:3000/api/login",{
+      const response = await  fetch("/api/login",{
          method:"POST",
          headers:{
         "Content-Type":"application/json"
@@ -250,13 +250,13 @@
       })
       const data = await response.json()
       console.log(data)
-     if(!data.status){
-      alert(data.messagem)
-      return;
-     }else{
-         document.getElementById('Usuario').value = ''
-         document.getElementById('Senha').value = ''
-         window.location.href = '/admin.html'
+      if(!data.status){
+        alert(data.messagem)
+        return;
+      }else{
+        document.getElementById('Usuario').value = ''
+        document.getElementById('Senha').value = ''
+        window.location.href = '/admin.html'
         
      }
     
